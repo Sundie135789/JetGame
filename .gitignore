@@ -1,0 +1,10 @@
+*.exe
+*.out
+a.out
+bin/
+.vscode/
+Thumbs.db
+.DS_Store
+assets/*
+.glsld/*
+.glsld
