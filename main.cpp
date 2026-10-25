@@ -1,3 +1,9 @@
+/*
+TECHNOLOGIES:
+Switched from float matrices / vectors to double matrices / vectors to prevent matrix drift for about 7 days on 500 FPS
+Switched from 1x3 vector for rotation and position, to one 4x4 matrix containing both.
+Used persistent storage of global transform matrix (except scale) instead of quaternions.
+*/
 #include <GL/glew.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
@@ -5,7 +11,6 @@
 #include <GL/gl.h>
 #include <vector>
 #include <string>
-// render the ground bruv
 #include "headers/model.hpp"
 #include "headers/camera.hpp"
 #include "headers/global.hpp"
@@ -14,8 +19,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-//add ground
-// add lighting pbr
 glm::dmat4 jetOrientation = glm::dmat4(1.0f);
 double rollSpeed = 0.6;
 double pitchSpeed = 0.5;
