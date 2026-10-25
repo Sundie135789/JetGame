@@ -9,8 +9,7 @@
 #include "headers/model.hpp"
 #include "headers/camera.hpp"
 #include "headers/global.hpp"
-#define HEIGHT 1080
-#define WIDTH 1920
+#include "headers/ground.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -19,10 +18,15 @@
 // add lighting pbr
 glm::dmat4 jetOrientation = glm::dmat4(1.0f);
 double rollSpeed = 0.6;
-double pitchSpeed = 0.3;
-double yawSpeed = 0.15;
+double pitchSpeed = 0.5;
+double yawSpeed = 0.1;
 double jetSpeed = 0.1;
 double deltaTime = 1.0, lastTime =0.0;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height){
+    window_width = width;
+    window_height = height;
+    glViewport(0, 0, window_width, window_height);
+}
 void processInput(GLFWwindow* window){
     glm::dvec3 twist(
         (glfwGetKey(window, GLFW_KEY_W) - glfwGetKey(window, GLFW_KEY_S)) * pitchSpeed * deltaTime,
@@ -40,18 +44,20 @@ int main(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "War Thunder - x64", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "War Thunder - x64", nullptr, nullptr);
+
     glfwMakeContextCurrent(window);
 
     glewExperimental = GL_TRUE;
     glewInit();
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glViewport(0,0,WIDTH,HEIGHT);
+    glViewport(0,0,window_width, window_height);
 
 
-
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     mainCamera = new Camera();
+    Ground *ground = new Ground(200.0f, -5.0f);
     Model* model = new Model("assets/Files/F-16D.gltf");
     while(!glfwWindowShouldClose(window)){
         double currentTime = glfwGetTime();
@@ -63,6 +69,7 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindVertexArray(0);
         processInput(window);
+        ground->Draw();
         model->Render(jetOrientation);
         glfwSwapBuffers(window);
     }

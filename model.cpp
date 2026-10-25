@@ -15,8 +15,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
-#define HEIGHT 1080
-#define WIDTH 1920
 #include "stb_image.h"
 void loadTexture(const aiScene* scene, aiMaterial* material, GLuint& textureID){
     aiString path;
