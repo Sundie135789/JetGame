@@ -124,6 +124,9 @@ void Model::Render(glm::dmat4 modelMatrix){
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(modelMatrix)));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(mainCamera->view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(mainCamera->projection));
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), 3.0f, 10.0f, 0.0f);
+        glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), mainCamera->position.x, mainCamera->position.y, mainCamera->position.z);
+        
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(packedData.size() / 8));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);

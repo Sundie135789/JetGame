@@ -3,6 +3,7 @@ TECHNOLOGIES:
 Switched from float matrices / vectors to double matrices / vectors to prevent matrix drift for about 7 days on 500 FPS
 Switched from 1x3 vector for rotation and position, to one 4x4 matrix containing both.
 Used persistent storage of global transform matrix (except scale) instead of quaternions.
+Added Polyform noncommercial license 1.0.0
 */
 #include <GL/glew.h>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -23,7 +24,7 @@ glm::dmat4 jetOrientation = glm::dmat4(1.0f);
 double rollSpeed = 0.6;
 double pitchSpeed = 0.5;
 double yawSpeed = 0.1;
-double jetSpeed = 0.1;
+double jetSpeed = 1.0;
 double deltaTime = 1.0, lastTime =0.0;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     window_width = width;
@@ -60,7 +61,7 @@ int main(){
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     mainCamera = new Camera();
-    Ground *ground = new Ground(200.0f, -5.0f);
+    Ground *ground = new Ground(1000.0f, -5.0f);
     Model* model = new Model("assets/Files/F-16D.gltf");
     while(!glfwWindowShouldClose(window)){
         double currentTime = glfwGetTime();
@@ -74,6 +75,7 @@ int main(){
         processInput(window);
         ground->Draw();
         model->Render(jetOrientation);
+        mainCamera->Follow(jetOrientation);
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);

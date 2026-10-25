@@ -3,6 +3,7 @@
 #include "headers/ground.hpp"
 #include "headers/global.hpp"
 #include "headers/loadshader.hpp"
+#include "stb_image.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
@@ -10,10 +11,10 @@ Ground::Ground(float size, float height){
     CompileShader();
     float halfSize = size / 2.0f;
     float vertices[] = {
-        -halfSize, height, -halfSize, 0.2f, 0.5f,  0.2f,
-        halfSize, height, -halfSize, 0.2f, 0.6f, 0.2f,
-        halfSize, height, halfSize, 0.3f, 0.7f, 0.3f,
-        -halfSize, height, halfSize, 0.2f, 0.5f, 0.2f
+        -halfSize, height, -halfSize, 0.0f, 0.0f,
+        halfSize, height, -halfSize, 1.0f, 0.0f,
+        halfSize, height, halfSize, 1.0f, 1.0f,
+        -halfSize, height, halfSize,0.0f, 1.0f
     };
     unsigned int indices[] = {
         0, 1, 2,
@@ -29,11 +30,33 @@ Ground::Ground(float size, float height){
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glBindVertexArray(0);
+
+    // add texture
+    glGenTextures(1, &textureID);
+    stbi_set_flip_vertically_on_load(true);
+    int width, texHeight, channels;
+    const char* path = "assets/grass_ground_diff_4k.png";
+    unsigned char* data = stbi_load(path, &width, &texHeight, &channels, 0);
+    if(!data) {
+        std::cout << "Texture failed to laod at path: " << path << std::endl;
+        stbi_image_free(data);
+        std::exit(1);
+    }
+    GLenum format = (channels == 3) ? GL_RGB : GL_RGBA;
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, texHeight, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(data);
 }
 Ground::~Ground(){
     glDeleteVertexArrays(1, &vao);
@@ -79,6 +102,10 @@ void Ground::Draw() {
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(mainCamera->view));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(mainCamera->projection));
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glUniform1i(glGetUniformLocation(shaderProgram, "texture_albedo"), 1);
+
 
     // Execute drawing instructions
     glBindVertexArray(vao);

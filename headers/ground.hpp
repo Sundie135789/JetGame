@@ -5,6 +5,7 @@ class Ground{
     private:
         unsigned int vao, vbo ,ebo;
         unsigned int shaderProgram;
+        unsigned int textureID;
         int indexCount;
         void CompileShader();
     public:

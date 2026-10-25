@@ -12,3 +12,13 @@ Camera::Camera(){
     view = glm::lookAt(position, target, glm::vec3(0.0f, 1.0f, 0.0f));
     projection = glm::perspective(glm::radians(60.0f), 1920.0f/1080.0f, 0.1f, 1000.0f);
 }
+void Camera::Follow(const glm::dmat4& jetMatrix){
+    glm::vec3 jetPos = glm::vec3(jetMatrix[3]);
+    glm::vec3 jetForward = glm::normalize(glm::vec3(jetMatrix[2]));
+    glm::vec3 jetUp = glm::normalize(glm::vec3(jetMatrix[1]));
+    float distanceBehind = 11.0f;
+    float heightAbove = 3.0f;
+    position = jetPos - (jetForward * distanceBehind) + (jetUp * heightAbove);
+    target = jetPos + (jetForward * 3.0f);
+    view = glm::lookAt(position, target, jetUp);
+}

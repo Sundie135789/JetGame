@@ -6,4 +6,5 @@ class Camera{
     float fov, aspect, near, far;
     glm::mat4 view, projection;
     glm::vec3 position, target;
+    void Follow(const glm::dmat4& jetMatrix);
 };
