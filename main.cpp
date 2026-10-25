@@ -18,13 +18,15 @@ Added Polyform noncommercial license 1.0.0
 #include "headers/ground.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <random>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-glm::dmat4 jetOrientation = glm::dmat4(1.0f);
+// rotate the tree, put manby of them
+Model* jet;
 double rollSpeed = 0.6;
 double pitchSpeed = 0.5;
 double yawSpeed = 0.1;
-double jetSpeed = 1.0;
+double jetSpeed = 0.01;
 double deltaTime = 1.0, lastTime =0.0;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     window_width = width;
@@ -38,9 +40,9 @@ void processInput(GLFWwindow* window){
         (glfwGetKey(window, GLFW_KEY_D) - glfwGetKey(window, GLFW_KEY_A)) *rollSpeed * deltaTime 
     );
     if(glm::length2(twist) > 0.0f){
-        jetOrientation= glm::rotate(jetOrientation, glm::length(twist), glm::normalize(twist));
+        jet->orientation= glm::rotate(jet->orientation, glm::length(twist), glm::normalize(twist));
     }
-    jetOrientation = glm::translate(jetOrientation, glm::dvec3(0.0, 0.0, jetSpeed));
+    jet->orientation = glm::translate(jet->orientation, glm::dvec3(0.0, 0.0, jetSpeed));
 
 }
 int main(){
@@ -60,9 +62,22 @@ int main(){
 
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    std::vector<Model*> models; 
+    jet = new Model("assets/Files/F-16D.gltf");
     mainCamera = new Camera();
     Ground *ground = new Ground(1000.0f, -5.0f);
-    Model* model = new Model("assets/Files/F-16D.gltf");
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> distr(-100.0f, 100.0f);
+    Model* initial = new Model("assets/Tree.fbx");
+    for(int i=0; i< 20 ;i++){
+        Model* t = new Model(initial->packedData);
+        float randomXDeviation = distr(gen), randomZDeviation = distr(gen);
+        t->orientation= glm::translate(t->orientation, glm::dvec3(randomXDeviation, -5.0f, randomZDeviation));
+        t->orientation = glm::rotate(t->orientation, glm::radians(-90.0), glm::dvec3(1.0f, 0.0f, 0.0f));
+        models.push_back(t);
+    }
     while(!glfwWindowShouldClose(window)){
         double currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
@@ -74,8 +89,11 @@ int main(){
         glBindVertexArray(0);
         processInput(window);
         ground->Draw();
-        model->Render(jetOrientation);
-        mainCamera->Follow(jetOrientation);
+        jet->Render(jet->orientation);
+        for(Model* model : models){
+            model->Render(model->orientation);
+        }
+        mainCamera->Follow(jet->orientation);
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);

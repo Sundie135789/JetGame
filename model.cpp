@@ -63,10 +63,12 @@ void checkShader(GLuint shader, const char* name){
         std::cerr << name << " shader error:\n" << log << '\n';
     }
 }
+
 Model::Model(const std::string &path) {
     std::string vert_text = LoadShader("shaders/basic.vert");
     std::string frag_text = LoadShader("shaders/basic.frag");
     this->loadModel(path);
+    this->orientation = glm::dmat4(1.0f);
     // opengl 
     glGenBuffers(1, &vbo);
     glGenVertexArrays(1, &vao);
@@ -111,17 +113,67 @@ Model::Model(const std::string &path) {
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
+
 }
-void Model::Render(glm::dmat4 modelMatrix){
+Model::Model(std::vector<float> packedData){
+    std::string vert_text = LoadShader("shaders/basic.vert");
+    std::string frag_text = LoadShader("shaders/basic.frag");
+    this->orientation = glm::dmat4(1.0f);
+    this->packedData = packedData;
+glGenBuffers(1, &vbo);
+    glGenVertexArrays(1, &vao);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, packedData.size() * sizeof(float), packedData.data(), GL_STATIC_DRAW);
+    GLsizei stride = 8 * sizeof(float);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,(void*)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,(void*)(3*sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    // shaders
+    GLuint vertex, fragment;
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    const char* vertex_shader = vert_text.c_str();
+    glShaderSource(vertex, 1, &vertex_shader, nullptr);
+    const char* fragment_shader = frag_text.c_str();
+    glShaderSource(fragment, 1, &fragment_shader, nullptr);
+    glCompileShader(vertex);
+    checkShader(vertex, "Vertex");
+    glCompileShader(fragment);
+    checkShader(fragment, "Fragment");
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertex);
+    glAttachShader(shaderProgram, fragment);
+    glLinkProgram(shaderProgram);
+    GLint success;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success){
+        char log[2048];
+        glGetProgramInfoLog(shaderProgram, sizeof(log), nullptr, log);
+        std::cerr << "Shader Program Link Error:\n" << log << '\n'; 
+    }
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+}
+void Model::Render( glm::dmat4& modelMatrix){
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, this->textureID);
         glUniform1i(glGetUniformLocation(this->shaderProgram, "texture_albedo"),0);
         double s = 0.6;
-        modelMatrix = glm::scale(modelMatrix, glm::dvec3(s, s, s));
+        glm::dmat4 scaledModelMatrix = glm::scale(modelMatrix, glm::dvec3(s, s, s));
 
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(modelMatrix)));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(scaledModelMatrix)));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(mainCamera->view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(mainCamera->projection));
         glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), 3.0f, 10.0f, 0.0f);

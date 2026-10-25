@@ -5,10 +5,11 @@
 class Model{
     public:
     Model(const std::string& path);
-    void Render(glm::dmat4 jetOrientation);
+    Model(std::vector<float> packedData);
+    void Render(glm::dmat4& modelMatrix);
     void loadModel(const std::string& path);
     //std::vector<float> vertices, normals, uvs;
     std::vector<float> packedData;
     GLuint shaderProgram, vbo, vao, textureID;
-
+    glm::dmat4 orientation;
 };
