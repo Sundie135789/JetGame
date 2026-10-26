@@ -1,6 +1,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/ext/matrix_double4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include <GL/glew.h>
 #include<GL/gl.h>
 #include <vector>
@@ -114,7 +116,23 @@ Model::Model(const std::string &path) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
 
+  glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 2000, nullptr, GL_STATIC_DRAW);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    std::size_t vec4Size = sizeof(glm::vec4);
+    for(unsigned int i=0;i<4;i++){
+    	glEnableVertexAttribArray(3 + i) ;
+	glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+	glVertexAttribDivisor(3 + i,1);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0 );
+    glBindVertexArray(0);
+
 }
+
 Model::Model(std::vector<float> packedData){
     std::string vert_text = LoadShader("shaders/basic.vert");
     std::string frag_text = LoadShader("shaders/basic.frag");
@@ -163,10 +181,45 @@ glGenBuffers(1, &vbo);
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 10000, nullptr, GL_STATIC_DRAW);
+
+    glBindVertexArray(vao);
+    std::size_t vec4Size = sizeof(glm::vec4);
+    for(unsigned int i=0;i<4;i++){
+    	glEnableVertexAttribArray(3 + i) ;
+	glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+	glVertexAttribDivisor(3 + i,1);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0 );
+    glBindVertexArray(0);
+}
+void Model::RenderInstanced(const std::vector<glm::mat4>& floatTransforms, int instanceCount){
+	if(instanceCount <=0) return;
+    glBindVertexArray(vao);
+    glUseProgram(this->shaderProgram);
+    glUniform1i( glGetUniformLocation(this->shaderProgram, "isInstanced") ,1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, this->textureID);
+    glUniform1i(glGetUniformLocation(this->shaderProgram, "texture_albedo"), 0);
+    
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(glm::mat4(mainCamera->view)));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(glm::mat4(mainCamera->projection)));
+    glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), 3.0f, 10.0f, 0.0f);
+    glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), mainCamera->position.x, mainCamera->position.y, mainCamera->position.z);
+    
+    GLsizei vertexCount = static_cast<GLsizei>(packedData.size() / 8);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, vertexCount, instanceCount);
+    
+    glBindVertexArray(0);
+    glUseProgram(0);
 }
 void Model::Render( glm::dmat4& modelMatrix){
         glBindVertexArray(vao);
     glUseProgram(this->shaderProgram);
+   
+    glUniform1i(glGetUniformLocation(shaderProgram, "isInstanced"),0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, this->textureID);
     glUniform1i(glGetUniformLocation(this->shaderProgram, "texture_albedo"), 0);
@@ -224,4 +277,5 @@ void Model::loadModel(const std::string& path){
             }
         }
     }
+  
 }
