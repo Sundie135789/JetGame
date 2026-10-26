@@ -165,17 +165,16 @@ glGenBuffers(1, &vbo);
     glUseProgram(0);
 }
 void Model::Render( glm::dmat4& modelMatrix){
-        glUseProgram(shaderProgram);
         glBindVertexArray(vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, this->textureID);
-        glUniform1i(glGetUniformLocation(this->shaderProgram, "texture_albedo"),0);
+    glUseProgram(this->shaderProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, this->textureID);
+    glUniform1i(glGetUniformLocation(this->shaderProgram, "texture_albedo"), 0);
         double s = 0.6;
         glm::dmat4 scaledModelMatrix = glm::scale(modelMatrix, glm::dvec3(s, s, s));
-
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(scaledModelMatrix)));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(mainCamera->view));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(mainCamera->projection));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(glm::mat4(mainCamera->view)));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(glm::mat4(mainCamera->projection)));
         glUniform3f(glGetUniformLocation(shaderProgram, "lightPos"), 3.0f, 10.0f, 0.0f);
         glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), mainCamera->position.x, mainCamera->position.y, mainCamera->position.z);
         

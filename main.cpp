@@ -1,4 +1,5 @@
 /*
+ 
 TECHNOLOGIES:
 Switched from float matrices / vectors to double matrices / vectors to prevent matrix drift for about 7 days on 500 FPS
 Switched from 1x3 vector for rotation and position, to one 4x4 matrix containing both.
@@ -7,6 +8,8 @@ Added Polyform noncommercial license 1.0.0
 */
 #include <GL/glew.h>
 #define GLM_ENABLE_EXPERIMENTAL
+
+#include <iostream>
 #include <glm/gtx/norm.hpp>
 #include <GLFW/glfw3.h>
 #include <GL/gl.h>
@@ -26,7 +29,7 @@ Model* jet;
 double rollSpeed = 0.6;
 double pitchSpeed = 0.5;
 double yawSpeed = 0.1;
-double jetSpeed = 0.01;
+double jetSpeed = 0.1;
 double deltaTime = 1.0, lastTime =0.0;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     window_width = width;
@@ -45,6 +48,7 @@ void processInput(GLFWwindow* window){
     jet->orientation = glm::translate(jet->orientation, glm::dvec3(0.0, 0.0, jetSpeed));
 
 }
+std::vector<glm::dmat4> treeTransforms;
 int main(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -67,31 +71,47 @@ int main(){
     jet = new Model("assets/Files/F-16D.gltf");
     mainCamera = new Camera();
     Ground *ground = new Ground(1000.0f, -5.0f);
+    Model* initial = new Model("assets/Tree.fbx");
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> distr(-100.0f, 100.0f);
-    Model* initial = new Model("assets/Tree.fbx");
-    for(int i=0; i< 20 ;i++){
-        Model* t = new Model(initial->packedData);
+    for(int i=0; i< 1000 ;i++){
+				glm::dmat4 transform = glm::dmat4(1.0f);
         float randomXDeviation = distr(gen), randomZDeviation = distr(gen);
-        t->orientation= glm::translate(t->orientation, glm::dvec3(randomXDeviation, -5.0f, randomZDeviation));
-        t->orientation = glm::rotate(t->orientation, glm::radians(-90.0), glm::dvec3(1.0f, 0.0f, 0.0f));
-        models.push_back(t);
+       	transform= glm::translate(transform, glm::dvec3(randomXDeviation, -5.0f, randomZDeviation));
+        transform = glm::rotate(transform, glm::radians(-90.0), glm::dvec3(1.0f, 0.0f, 0.0f));
+        treeTransforms.push_back(transform);
     }
     while(!glfwWindowShouldClose(window)){
         double currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
+	std::cout << "Delta time : " << deltaTime << "\n"; 
         if(deltaTime > 0.1) deltaTime = 0.1;
         glfwPollEvents();
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindVertexArray(0);
         processInput(window);
         ground->Draw();
         jet->Render(jet->orientation);
-        for(Model* model : models){
-            model->Render(model->orientation);
+	// rendering trees
+	glUseProgram(initial->shaderProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, initial->textureID);
+	glBindVertexArray(initial->vao);
+	GLint mLoc = glGetUniformLocation(initial->shaderProgram, "model");
+	GLint vLoc = glGetUniformLocation(initial->shaderProgram, "view");
+	GLint pLoc = glGetUniformLocation(initial->shaderProgram, "projection");
+	glUniform3f(glGetUniformLocation(initial->shaderProgram, "lightPos"), 3.0f, 10.0f, 0.0f);
+	glUniform3f(glGetUniformLocation(initial->shaderProgram, "viewPos"), mainCamera->position.x, mainCamera->position.y, mainCamera->position.z);
+	glUniform1i(glGetUniformLocation(initial->shaderProgram, "texture_albedo"), 0);
+        for(auto& transform : treeTransforms){
+		double s = 0.6;
+		glm::dmat4 modelMatrixScaled = glm::scale(transform ,glm::dvec3(s, s, s));
+		glUniformMatrix4fv(mLoc, 1, GL_FALSE, glm::value_ptr(glm::mat4(modelMatrixScaled)));
+		glUniformMatrix4fv(vLoc, 1, GL_FALSE, glm::value_ptr(mainCamera->view));
+		glUniformMatrix4fv(pLoc, 1, GL_FALSE, glm::value_ptr(mainCamera->projection));
+								initial->Render(transform);
         }
         mainCamera->Follow(jet->orientation);
         glfwSwapBuffers(window);
