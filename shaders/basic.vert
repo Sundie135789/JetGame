@@ -13,7 +13,7 @@ uniform bool isInstanced;
 void main(){
     mat4 finalModelMatrix = isInstanced ? aInstanceMatrix : model;
     FragPos = vec3(finalModelMatrix * vec4(aPos, 1.0));
-    Normal = mat3(finalModelMatrix) * aNormal;
+    Normal = mat3(transpose(inverse(finalModelMatrix))) * aNormal;
     UV = aUV;
     gl_Position = projection * view * finalModelMatrix * vec4(aPos, 1.0);   
 }

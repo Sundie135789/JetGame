@@ -118,7 +118,7 @@ Model::Model(const std::string &path) {
 
   glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 2000, nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 10000, nullptr, GL_STATIC_DRAW);
 
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -186,6 +186,7 @@ glGenBuffers(1, &vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * 10000, nullptr, GL_STATIC_DRAW);
 
     glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     std::size_t vec4Size = sizeof(glm::vec4);
     for(unsigned int i=0;i<4;i++){
     	glEnableVertexAttribArray(3 + i) ;
@@ -197,6 +198,10 @@ glGenBuffers(1, &vbo);
 }
 void Model::RenderInstanced(const std::vector<glm::mat4>& floatTransforms, int instanceCount){
 	if(instanceCount <=0) return;
+    /*glBindBuffer(GL_ARRAY_BUFFER, this->instanceVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, instanceCount * sizeof(glm::mat4), floatTransforms.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);*/
+
     glBindVertexArray(vao);
     glUseProgram(this->shaderProgram);
     glUniform1i( glGetUniformLocation(this->shaderProgram, "isInstanced") ,1);

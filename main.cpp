@@ -1,4 +1,5 @@
 /*
+
  
 TECHNOLOGIES:
 Switched from float matrices / vectors to double matrices / vectors to prevent matrix drift for about 7 days on 500 FPS
@@ -13,6 +14,7 @@ Removed std::cout for Deltatime print
 */
 /*
  TO-DO LIST:
+    0. Find a suitable tree model. polyhaven moels
 	1. Do correct instances, atleast 100 FPS with 1000 Loop Count.
 	2. Chunk Loading
  */
@@ -34,13 +36,19 @@ Removed std::cout for Deltatime print
 #include <random>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-// rotate the tree, put manby of them
+#define JET_RADIUS 0.205
 Model* jet;
 double rollSpeed = 0.6;
 double pitchSpeed = 0.5;
 double yawSpeed = 0.1;
-double jetSpeed = 1.0;
+double jetSpeed = 0.8;
 double deltaTime = 1.0, lastTime =0.0;
+void checkGroundCollision(const glm::dmat4& jetTransform){
+    glm::dvec3 jetPosition = glm::dvec3(jetTransform[3]);
+    if((jetPosition.y - JET_RADIUS) <= -5.0f){
+        std::cout << "detected colission.";
+    }
+}
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     window_width = width;
     window_height = height;
@@ -56,7 +64,6 @@ void processInput(GLFWwindow* window){
         jet->orientation= glm::rotate(jet->orientation, glm::length(twist), glm::normalize(twist));
     }
     jet->orientation = glm::translate(jet->orientation, glm::dvec3(0.0, 0.0, jetSpeed));
-
 }
 std::vector<glm::mat4> treeTransformsFloat;
 int main(){
@@ -78,27 +85,10 @@ int main(){
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     std::vector<Model*> models; 
-    jet = new Model("assets/Files/F-16D.gltf");
+    jet = new Model("assets/Jet/F-16D.gltf");
     mainCamera = new Camera();
-    Ground *ground = new Ground(1000.0f, -5.0f);
-    Model* initial = new Model("assets/Tree.fbx");
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> distr(-100.0f, 100.0f);
-    for(int i=0; i< 100 ;i++){
-
-				glm::dmat4 transform = glm::dmat4(1.0f);
-        float randomXDeviation = distr(gen), randomZDeviation = distr(gen);
-       	transform= glm::translate(transform, glm::dvec3(randomXDeviation, -5.0f, randomZDeviation));
-        transform = glm::rotate(transform, glm::radians(-90.0), glm::dvec3(1.0f, 0.0f, 0.0f));
-	double s = 0.6;
-
-	glm::dmat4 scaledMatrix = glm::scale(transform, glm::dvec3(s, s, s));
-        treeTransformsFloat.push_back(glm::mat4(scaledMatrix));
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, initial->instanceVBO);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, treeTransformsFloat.size() * sizeof(glm::mat4), treeTransformsFloat.data());
-    glBindBuffer(GL_ARRAY_BUFFER, 0 );
+    Ground *ground = new Ground(10000.0f, -5.0f);
+    glm::dvec3 jetPosition = glm::dvec3(jet->orientation[3]);
     while(!glfwWindowShouldClose(window)){
         double currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
@@ -110,9 +100,8 @@ int main(){
         processInput(window);
         ground->Draw();
         jet->Render(jet->orientation);
-	// rendering trees
-	initial->RenderInstanced(treeTransformsFloat, treeTransformsFloat.size());
         mainCamera->Follow(jet->orientation);
+        checkGroundCollision(jet->orientation);
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);
