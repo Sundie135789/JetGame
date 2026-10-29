@@ -6,5 +6,5 @@ out vec2 UV;
 
 void main(){
     gl_Position = projection * view * model * vec4(aPos, 1.0);
-    UV = aUV * 50.0f;
+    UV = aUV * 500.0f;
 }

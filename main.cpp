@@ -14,8 +14,7 @@ Removed std::cout for Deltatime print
 */
 /*
  TO-DO LIST:
-    0. Find a suitable tree model. polyhaven moels
-	1. Do correct instances, atleast 100 FPS with 1000 Loop Count.
+ 1. experiment with gravity, or delete it
 	2. Chunk Loading
  */
 #include <GL/glew.h>
@@ -43,12 +42,6 @@ double pitchSpeed = 0.5;
 double yawSpeed = 0.1;
 double jetSpeed = 0.8;
 double deltaTime = 1.0, lastTime =0.0;
-void checkGroundCollision(const glm::dmat4& jetTransform){
-    glm::dvec3 jetPosition = glm::dvec3(jetTransform[3]);
-    if((jetPosition.y - JET_RADIUS) <= -5.0f){
-        std::cout << "detected colission.";
-    }
-}
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     window_width = width;
     window_height = height;
@@ -65,7 +58,6 @@ void processInput(GLFWwindow* window){
     }
     jet->orientation = glm::translate(jet->orientation, glm::dvec3(0.0, 0.0, jetSpeed));
 }
-std::vector<glm::mat4> treeTransformsFloat;
 int main(){
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -101,7 +93,6 @@ int main(){
         ground->Draw();
         jet->Render(jet->orientation);
         mainCamera->Follow(jet->orientation);
-        checkGroundCollision(jet->orientation);
         glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);
